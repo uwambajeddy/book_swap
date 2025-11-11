@@ -84,7 +84,8 @@ class SwapProvider with ChangeNotifier {
   Future<bool> createSwap({
     required String requesterId,
     required String requesterName,
-    required BookModel book,
+    required BookModel requesterBook,
+    required BookModel ownerBook,
   }) async {
     try {
       _isLoading = true;
@@ -92,7 +93,7 @@ class SwapProvider with ChangeNotifier {
       notifyListeners();
 
       // Check if user already has a pending swap for this book
-      bool hasExisting = await _swapService.hasExistingSwap(book.id, requesterId);
+      bool hasExisting = await _swapService.hasExistingSwap(ownerBook.id, requesterId);
       if (hasExisting) {
         _isLoading = false;
         _errorMessage = 'You already have a pending swap request for this book.';
@@ -103,7 +104,8 @@ class SwapProvider with ChangeNotifier {
       await _swapService.createSwap(
         requesterId: requesterId,
         requesterName: requesterName,
-        book: book,
+        requesterBook: requesterBook,
+        ownerBook: ownerBook,
       );
 
       _isLoading = false;
@@ -118,13 +120,13 @@ class SwapProvider with ChangeNotifier {
   }
 
   // Accept swap
-  Future<bool> acceptSwap(String swapId, String bookId) async {
+  Future<bool> acceptSwap(String swapId, String requesterBookId, String ownerBookId) async {
     try {
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
 
-      await _swapService.updateSwapStatus(swapId, bookId, SwapStatus.accepted);
+      await _swapService.updateSwapStatus(swapId, requesterBookId, ownerBookId, SwapStatus.accepted);
 
       _isLoading = false;
       notifyListeners();
@@ -138,13 +140,13 @@ class SwapProvider with ChangeNotifier {
   }
 
   // Reject swap
-  Future<bool> rejectSwap(String swapId, String bookId) async {
+  Future<bool> rejectSwap(String swapId, String requesterBookId, String ownerBookId) async {
     try {
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
 
-      await _swapService.updateSwapStatus(swapId, bookId, SwapStatus.rejected);
+      await _swapService.updateSwapStatus(swapId, requesterBookId, ownerBookId, SwapStatus.rejected);
 
       _isLoading = false;
       notifyListeners();
@@ -158,13 +160,13 @@ class SwapProvider with ChangeNotifier {
   }
 
   // Delete swap - Only book owner can delete
-  Future<bool> deleteSwap(String swapId, String bookId, String userId) async {
+  Future<bool> deleteSwap(String swapId, String requesterBookId, String ownerBookId, String userId) async {
     try {
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
 
-      await _swapService.deleteSwap(swapId, bookId, userId);
+      await _swapService.deleteSwap(swapId, requesterBookId, ownerBookId, userId);
 
       _isLoading = false;
       notifyListeners();

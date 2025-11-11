@@ -246,6 +246,36 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Delete account and all associated data
+  Future<bool> deleteAccount() async {
+    if (_currentUser == null) {
+      _errorMessage = 'No user is currently signed in.';
+      notifyListeners();
+      return false;
+    }
+
+    try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      await _authService.deleteAccount(_currentUser!.uid);
+
+      // Clear local state
+      _currentUser = null;
+      _currentUserData = null;
+      _isLoading = false;
+      notifyListeners();
+      
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Clear error message
   void clearError() {
     _errorMessage = null;

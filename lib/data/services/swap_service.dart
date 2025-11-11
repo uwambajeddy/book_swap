@@ -13,7 +13,8 @@ class SwapService {
   Future<SwapModel> createSwap({
     required String requesterId,
     required String requesterName,
-    required BookModel book,
+    required BookModel requesterBook,
+    required BookModel ownerBook,
   }) async {
     try {
       // Generate swap ID
@@ -24,12 +25,16 @@ class SwapService {
         id: swapId,
         requesterId: requesterId,
         requesterName: requesterName,
-        ownerId: book.ownerId,
-        ownerName: book.ownerName,
-        bookId: book.id,
-        bookTitle: book.title,
-        bookAuthor: book.author,
-        bookImageUrl: book.imageUrl,
+        requesterBookId: requesterBook.id,
+        requesterBookTitle: requesterBook.title,
+        requesterBookAuthor: requesterBook.author,
+        requesterBookImageUrl: requesterBook.imageUrl,
+        ownerId: ownerBook.ownerId,
+        ownerName: ownerBook.ownerName,
+        ownerBookId: ownerBook.id,
+        ownerBookTitle: ownerBook.title,
+        ownerBookAuthor: ownerBook.author,
+        ownerBookImageUrl: ownerBook.imageUrl,
         status: SwapStatus.pending,
         createdAt: DateTime.now(),
       );
@@ -37,15 +42,16 @@ class SwapService {
       // Save swap to Firestore
       await _firestore.collection('swaps').doc(swapId).set(swap.toMap());
 
-      // Update book status to pending
-      await _bookService.updateBookStatus(book.id, BookStatus.pending);
+      // Update both books' status to pending
+      await _bookService.updateBookStatus(requesterBook.id, BookStatus.pending);
+      await _bookService.updateBookStatus(ownerBook.id, BookStatus.pending);
 
       // Create or get chat between requester and owner
       await _chatService.getOrCreateChat(
         user1Id: requesterId,
         user1Name: requesterName,
-        user2Id: book.ownerId,
-        user2Name: book.ownerName,
+        user2Id: ownerBook.ownerId,
+        user2Name: ownerBook.ownerName,
       );
 
       return swap;
@@ -56,7 +62,7 @@ class SwapService {
 
   // Update swap status
   Future<void> updateSwapStatus(
-      String swapId, String bookId, SwapStatus status) async {
+      String swapId, String requesterBookId, String ownerBookId, SwapStatus status) async {
     try {
       // Update swap in Firestore
       await _firestore.collection('swaps').doc(swapId).update({
@@ -64,7 +70,7 @@ class SwapService {
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
-      // Update book status based on swap status
+      // Update both books' status based on swap status
       BookStatus bookStatus;
       if (status == SwapStatus.accepted) {
         bookStatus = BookStatus.swapped;
@@ -74,7 +80,8 @@ class SwapService {
         bookStatus = BookStatus.pending;
       }
 
-      await _bookService.updateBookStatus(bookId, bookStatus);
+      await _bookService.updateBookStatus(requesterBookId, bookStatus);
+      await _bookService.updateBookStatus(ownerBookId, bookStatus);
     } catch (e) {
       throw 'Error updating swap status: $e';
     }
@@ -185,7 +192,7 @@ class SwapService {
   }
 
   // Delete swap - Only book owner can cancel/delete swap requests
-  Future<void> deleteSwap(String swapId, String bookId, String userId) async {
+  Future<void> deleteSwap(String swapId, String requesterBookId, String ownerBookId, String userId) async {
     try {
       // Get the swap to verify who can delete it
       SwapModel? swap = await getSwap(swapId);
@@ -203,8 +210,9 @@ class SwapService {
       // Delete swap from Firestore
       await _firestore.collection('swaps').doc(swapId).delete();
 
-      // Reset book status to available
-      await _bookService.updateBookStatus(bookId, BookStatus.available);
+      // Reset both books' status to available
+      await _bookService.updateBookStatus(requesterBookId, BookStatus.available);
+      await _bookService.updateBookStatus(ownerBookId, BookStatus.available);
     } catch (e) {
       if (e.toString().contains('cannot cancel')) {
         rethrow;
@@ -214,11 +222,11 @@ class SwapService {
   }
 
   // Check if there's an existing pending swap for a book
-  Future<bool> hasExistingSwap(String bookId, String requesterId) async {
+  Future<bool> hasExistingSwap(String ownerBookId, String requesterId) async {
     try {
       QuerySnapshot snapshot = await _firestore
           .collection('swaps')
-          .where('bookId', isEqualTo: bookId)
+          .where('ownerBookId', isEqualTo: ownerBookId)
           .where('requesterId', isEqualTo: requesterId)
           .where('status', isEqualTo: 'Pending')
           .get();
