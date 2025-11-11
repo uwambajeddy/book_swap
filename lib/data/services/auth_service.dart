@@ -229,6 +229,83 @@ class AuthService {
     }
   }
 
+  // Delete user account and all associated data
+  Future<void> deleteAccount(String userId) async {
+    try {
+      print('🗑️ Starting account deletion for user: $userId');
+      
+      // 1. Delete user document from Firestore
+      await _firestore.collection('users').doc(userId).delete();
+      print('✅ User document deleted');
+      
+      // 2. Delete user's books
+      final booksSnapshot = await _firestore
+          .collection('books')
+          .where('ownerId', isEqualTo: userId)
+          .get();
+      
+      for (var doc in booksSnapshot.docs) {
+        await doc.reference.delete();
+      }
+      print('✅ Deleted ${booksSnapshot.docs.length} books');
+      
+      // 3. Delete swap requests where user is requester or owner
+      final swapsAsRequester = await _firestore
+          .collection('swaps')
+          .where('requesterId', isEqualTo: userId)
+          .get();
+      
+      for (var doc in swapsAsRequester.docs) {
+        await doc.reference.delete();
+      }
+      
+      final swapsAsOwner = await _firestore
+          .collection('swaps')
+          .where('ownerId', isEqualTo: userId)
+          .get();
+      
+      for (var doc in swapsAsOwner.docs) {
+        await doc.reference.delete();
+      }
+      print('✅ Deleted ${swapsAsRequester.docs.length + swapsAsOwner.docs.length} swap requests');
+      
+      // 4. Delete chats where user is participant
+      final chatsSnapshot = await _firestore
+          .collection('chats')
+          .where('participants', arrayContains: userId)
+          .get();
+      
+      for (var doc in chatsSnapshot.docs) {
+        // Delete messages subcollection
+        final messagesSnapshot = await doc.reference
+            .collection('messages')
+            .get();
+        
+        for (var messageDoc in messagesSnapshot.docs) {
+          await messageDoc.reference.delete();
+        }
+        
+        // Delete chat document
+        await doc.reference.delete();
+      }
+      print('✅ Deleted ${chatsSnapshot.docs.length} chats');
+      
+      // 5. Finally, delete Firebase Auth user
+      await _auth.currentUser?.delete();
+      print('✅ Firebase Auth user deleted');
+      
+      print('✅ Account deletion completed successfully');
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        throw 'Please sign in again before deleting your account.';
+      }
+      throw _handleAuthException(e);
+    } catch (e) {
+      print('❌ Error deleting account: $e');
+      throw 'Error deleting account: $e';
+    }
+  }
+
   // Handle Firebase Auth exceptions
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
