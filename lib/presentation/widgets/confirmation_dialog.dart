@@ -230,4 +230,21 @@ class ConfirmationDialog extends StatelessWidget {
       ),
     );
   }
+
+  static Future<bool?> showDeleteAccount({
+    required BuildContext context,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => ConfirmationDialog(
+        title: 'Delete Account',
+        message: 'Are you sure you want to permanently delete your account?',
+        subtitle: 'This will delete all your books, swap requests, and chat history. This action cannot be undone!',
+        icon: Icons.warning_rounded,
+        iconColor: AppColors.error,
+        confirmText: 'Delete Account',
+        confirmColor: AppColors.error,
+      ),
+    );
+  }
 }

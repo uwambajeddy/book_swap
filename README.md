@@ -10,10 +10,10 @@ A comprehensive mobile application that enables students to swap textbooks with 
 
 ✅ **User Authentication** - Email/password authentication with email verification  
 ✅ **Book Listings** - Full CRUD operations for textbook listings  
-✅ **Swap System** - Request, accept, or reject book swap offers  
+✅ **Two-Book Swap System** - Fair exchange requiring both users to offer books  
 ✅ **Real-time Chat** - Communication between users after swap initiation  
 ✅ **State Management** - Implemented using Provider pattern  
-✅ **Image Upload** - Firebase Storage integration for book covers  
+✅ **Cloud Image Storage** - Cloudinary integration for book cover images  
 ✅ **Clean Architecture** - Separation of concerns (Data, Domain, Presentation)
 
 ## Architecture
@@ -238,7 +238,14 @@ service firebase.storage {
    - Place `google-services.json` in `android/app/`
    - Place `GoogleService-Info.plist` in `ios/Runner/` (if using iOS)
 
-4. **Run the app**
+4. **Configure Cloudinary** (for image storage)
+   - See **[CLOUDINARY_SETUP.md](CLOUDINARY_SETUP.md)** for detailed instructions
+   - Quick steps:
+     1. Create free account at https://cloudinary.com
+     2. Get your Cloud Name and create an Upload Preset
+     3. Update `lib/data/services/cloudinary_service.dart` with your credentials
+
+5. **Run the app**
    ```bash
    flutter run
    ```

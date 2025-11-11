@@ -38,9 +38,9 @@ class SwapRequestsCard extends StatelessWidget {
 
     bool success;
     if (accept) {
-      success = await swapProvider.acceptSwap(swap.id, swap.bookId);
+      success = await swapProvider.acceptSwap(swap.id, swap.requesterBookId, swap.ownerBookId);
     } else {
-      success = await swapProvider.rejectSwap(swap.id, swap.bookId);
+      success = await swapProvider.rejectSwap(swap.id, swap.requesterBookId, swap.ownerBookId);
     }
 
     if (!context.mounted) return;
@@ -176,7 +176,7 @@ class SwapRequestsCard extends StatelessWidget {
 
         // Filter swaps for this specific book
         final bookSwaps = snapshot.data!
-            .where((swap) => swap.bookId == book.id && swap.status == SwapStatus.pending)
+            .where((swap) => swap.ownerBookId == book.id && swap.status == SwapStatus.pending)
             .toList();
 
         print('📊 Filtered swaps for this book: ${bookSwaps.length}');
@@ -249,20 +249,6 @@ class SwapRequestsCard extends StatelessWidget {
                           padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
-                              // Avatar
-                              CircleAvatar(
-                                backgroundColor: AppColors.primaryYellow,
-                                radius: 24,
-                                child: Text(
-                                  swap.requesterName[0].toUpperCase(),
-                                  style: const TextStyle(
-                                    color: AppColors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
                               // Info
                               Expanded(
                                 child: Column(
@@ -275,6 +261,39 @@ class SwapRequestsCard extends StatelessWidget {
                                         fontSize: 15,
                                         color: AppColors.primaryDark,
                                       ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Offers: ${swap.requesterBookTitle}',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.primaryYellow,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.swap_horiz,
+                                          size: 12,
+                                          color: AppColors.mediumGray.withOpacity(0.6),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            'For: ${swap.ownerBookTitle}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.darkGray.withOpacity(0.7),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     const SizedBox(height: 4),
                                     Row(
