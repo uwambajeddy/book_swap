@@ -121,7 +121,8 @@ chats/
 ### Error 1: Network Authentication Error (Sign Up Failure)
 
 **Screenshot:**
-![Network Error](attachment_1_signup_network_error.png)
+![Network Error]<img width="1080" height="2400" alt="attachment_1_signup_network_error" src="https://github.com/user-attachments/assets/7b7b9358-72cd-4d00-95b7-14c44ea3cc30" />
+
 
 **Error Message:**
 ```
@@ -149,7 +150,8 @@ connection or unreachable host) has occurred.
 ### Error 2: Cloudinary 400 Error (Bad Response)
 
 **Screenshot:**
-![Cloudinary 400 Error](attachment_2_cloudinary_400_error.png)
+![Cloudinary 400 Error]<img width="1344" height="2992" alt="attachment_2_cloudinary_400_error" src="https://github.com/user-attachments/assets/51902850-13b9-43e6-9f74-9bdf3e636145" />
+
 
 **Error Message:**
 ```
@@ -196,7 +198,8 @@ Future<String> uploadImage(File imageFile, String bookId) async {
 ### Error 3: Firebase Storage Object Not Found
 
 **Screenshot:**
-![Firebase Storage Error](attachment_3_firebase_storage_error.png)
+![Firebase Storage Error]<img width="1344" height="2992" alt="attachment_3_firebase_storage_error" src="https://github.com/user-attachments/assets/ce2eb2f0-b91a-4fd9-b84b-06da9200aa0c" />
+
 
 **Error Message:**
 ```
@@ -249,7 +252,7 @@ final imageUrl = await cloudinaryService.uploadImage(imageFile, book.id);
 ### Error 4: Email Verification Required
 
 **Screenshot:**
-![Email Verification Banner](attachment_4_email_verification.png)
+![Email Verification Banner]<img width="1344" height="2992" alt="attachment_4_email_verification" src="https://github.com/user-attachments/assets/66c5af3c-6871-43fa-8605-dee2b43776e4" />
 
 **Issue:**
 - Users could create accounts but couldn't post books or make swaps without verifying email
