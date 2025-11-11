@@ -303,6 +303,81 @@ class SettingsScreen extends StatelessWidget {
                             onPressed: () => _showLogoutDialog(context, authProvider),
                           ),
                         ),
+
+                        const SizedBox(height: 32),
+
+                        // Danger Zone Section
+                        _buildSectionHeader('Danger Zone'),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.error.withOpacity(0.2),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.warning_rounded,
+                                    color: AppColors.error,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Delete Account',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.error,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Permanently delete your account and all associated data including books, swap requests, and chat history.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.darkGray.withOpacity(0.8),
+                                  height: 1.5,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.error,
+                                    side: BorderSide(
+                                      color: AppColors.error,
+                                      width: 1.5,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  icon: const Icon(Icons.delete_forever),
+                                  label: const Text(
+                                    'Delete My Account',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  onPressed: () => _showDeleteAccountDialog(context, authProvider),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -457,6 +532,104 @@ class SettingsScreen extends StatelessWidget {
       await authProvider.signOut();
       if (context.mounted) {
         Navigator.of(context).pushReplacementNamed('/sign-in');
+      }
+    }
+  }
+
+  Future<void> _showDeleteAccountDialog(
+    BuildContext context,
+    AuthProvider authProvider,
+  ) async {
+    bool? confirm = await ConfirmationDialog.showDeleteAccount(context: context);
+
+    if (confirm == true && context.mounted) {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.error),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Deleting account...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Delete account
+      bool success = await authProvider.deleteAccount();
+
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
+
+        if (success) {
+          // Show success message and navigate to sign in
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Account deleted successfully'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          Navigator.of(context).pushReplacementNamed('/sign-in');
+        } else {
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.errorMessage ?? 'Failed to delete account'),
+              backgroundColor: AppColors.error,
+              duration: Duration(seconds: 5),
+            ),
+          );
+
+          // If error is about recent login, suggest re-login
+          if (authProvider.errorMessage?.contains('sign in again') == true) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Re-authentication Required'),
+                content: Text(
+                  'For security reasons, you need to sign in again before deleting your account.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryYellow,
+                    ),
+                    onPressed: () async {
+                      Navigator.pop(context); // Close dialog
+                      await authProvider.signOut();
+                      if (context.mounted) {
+                        Navigator.of(context).pushReplacementNamed('/sign-in');
+                      }
+                    },
+                    child: Text('Sign In Again'),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
       }
     }
   }

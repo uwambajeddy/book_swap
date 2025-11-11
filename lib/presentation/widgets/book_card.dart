@@ -283,7 +283,7 @@ class BookCard extends StatelessWidget {
 
         // Filter swaps for this specific book
         final bookSwaps = snapshot.data!
-            .where((swap) => swap.bookId == book.id && swap.status == SwapStatus.pending)
+            .where((swap) => swap.ownerBookId == book.id && swap.status == SwapStatus.pending)
             .toList();
 
         if (bookSwaps.isEmpty) {
@@ -375,6 +375,17 @@ class BookCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
+                  'Offers: ${swap.requesterBookTitle}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.primaryYellow,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
                   _formatSwapTime(swap.createdAt),
                   style: TextStyle(
                     fontSize: 11,
@@ -456,9 +467,9 @@ class BookCard extends StatelessWidget {
 
     bool success;
     if (accept) {
-      success = await swapProvider.acceptSwap(swap.id, swap.bookId);
+      success = await swapProvider.acceptSwap(swap.id, swap.requesterBookId, swap.ownerBookId);
     } else {
-      success = await swapProvider.rejectSwap(swap.id, swap.bookId);
+      success = await swapProvider.rejectSwap(swap.id, swap.requesterBookId, swap.ownerBookId);
     }
 
     if (!context.mounted) return;

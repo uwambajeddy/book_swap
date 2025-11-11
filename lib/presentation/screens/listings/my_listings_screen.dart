@@ -107,22 +107,10 @@ class MyListingsScreen extends StatelessWidget {
     if (confirm != true || !context.mounted) return;
 
     final bookProvider = Provider.of<BookProvider>(context, listen: false);
-    
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
-        ),
-      ),
-    );
 
     bool success = await bookProvider.deleteBook(book.id, book.imageUrl);
 
     if (!context.mounted) return;
-    Navigator.of(context).pop(); // Close loading dialog
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(

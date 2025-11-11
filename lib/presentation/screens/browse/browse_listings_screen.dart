@@ -10,6 +10,7 @@ import '../../../domain/providers/book_provider.dart';
 import '../../../domain/providers/swap_provider.dart';
 import '../listings/post_book_screen.dart';
 import '../../widgets/book_card.dart';
+import '../../widgets/book_selection_dialog.dart';
 import '../../widgets/condition_badge.dart';
 import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/screen_title_header.dart';
@@ -31,8 +32,9 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
     super.dispose();
   }
 
-  Future<void> _createSwapOffer(BookModel book) async {
+  Future<void> _createSwapOffer(BookModel ownerBook) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final bookProvider = Provider.of<BookProvider>(context, listen: false);
     final swapProvider = Provider.of<SwapProvider>(context, listen: false);
 
     if (authProvider.currentUserData == null) return;
@@ -46,10 +48,46 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
       return;
     }
 
+    // Force reload books to ensure we have latest data
+    await bookProvider.loadAllBooks();
+
+    // Get user's available books
+    List<BookModel> myAvailableBooks = bookProvider.allBooks
+        .where((b) => 
+            b.ownerId == authProvider.currentUserData!.id && 
+            b.status == BookStatus.available)
+        .toList();
+
+    print('🔍 Debug: User ID: ${authProvider.currentUserData!.id}');
+    print('🔍 Debug: Total books in provider: ${bookProvider.allBooks.length}');
+    print('🔍 Debug: My available books: ${myAvailableBooks.length}');
+    print('🔍 Debug: All my books:');
+    for (var book in bookProvider.allBooks.where((b) => b.ownerId == authProvider.currentUserData!.id)) {
+      print('   - ${book.title} | Status: ${book.status.displayName} | Condition: ${book.condition.displayName}');
+    }
+
+    if (myAvailableBooks.isEmpty) {
+      CustomSnackbar.showWarning(
+        context,
+        'You need to post an available book first to make a swap',
+      );
+      return;
+    }
+
+    // Show book selection dialog
+    BookModel? selectedBook = await BookSelectionDialog.show(
+      context: context,
+      books: myAvailableBooks,
+      title: 'Select Your Book',
+      subtitle: 'Choose which book you want to offer for "${ownerBook.title}"',
+    );
+
+    if (selectedBook == null || !mounted) return;
+
     // Show confirmation dialog
     bool? confirm = await ConfirmationDialog.showSwapRequest(
       context: context,
-      bookTitle: book.title,
+      bookTitle: '${selectedBook.title} ⇄ ${ownerBook.title}',
     );
 
     if (confirm != true || !mounted) return;
@@ -57,7 +95,8 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
     bool success = await swapProvider.createSwap(
       requesterId: authProvider.currentUserData!.id,
       requesterName: authProvider.currentUserData!.fullName,
-      book: book,
+      requesterBook: selectedBook,
+      ownerBook: ownerBook,
     );
 
     if (!mounted) return;
@@ -148,7 +187,7 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
                 },
                 style: const TextStyle(fontSize: 15),
                 decoration: InputDecoration(
-                  hintText: 'Search by title, author, or ISBN',
+                  hintText: 'Search by title, author, or swap preference',
                   hintStyle: TextStyle(
                     color: AppColors.mediumGray.withOpacity(0.6),
                     fontSize: 14,
@@ -219,6 +258,16 @@ class _BrowseListingsScreenState extends State<BrowseListingsScreen> {
 
                 // Filter out user's own books
                 books = books.where((book) => book.ownerId != authProvider.currentUser?.uid).toList();
+
+                // Apply search filter
+                if (_searchController.text.isNotEmpty) {
+                  final searchQuery = _searchController.text.toLowerCase().trim();
+                  books = books.where((book) {
+                    return book.title.toLowerCase().contains(searchQuery) ||
+                           book.author.toLowerCase().contains(searchQuery) ||
+                           book.swapFor.toLowerCase().contains(searchQuery);
+                  }).toList();
+                }
 
                 if (books.isEmpty) {
                   return Center(
